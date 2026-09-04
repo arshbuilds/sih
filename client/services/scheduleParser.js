@@ -22,6 +22,27 @@ function parseDate(val) {
 }
 
 /**
+ * Retrieves a field value from a row regardless of header casing or delimiter format.
+ * (e.g., handles 'activityId', 'Activity ID', 'activity_id', 'ActivityId')
+ */
+function getFieldValue(row, aliases) {
+  const normalizedRowMap = {};
+  for (const key of Object.keys(row)) {
+    const simplified = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+    normalizedRowMap[simplified] = row[key];
+  }
+
+  for (const alias of aliases) {
+    const cleanAlias = alias.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (normalizedRowMap[cleanAlias] !== undefined) {
+      return normalizedRowMap[cleanAlias];
+    }
+  }
+
+  return null;
+}
+
+/**
  * Parses an uploaded schedule file buffer (.csv, .xlsx, .xls) into normalized activity objects
  * and categorizes rows missing required fields under failed.
  *
@@ -72,8 +93,12 @@ export function parseScheduleFile(buffer, originalFilename) {
       continue;
     }
 
-    const activityId = normalizeString(row.activityId);
-    const activityName = normalizeString(row.activityName);
+    const activityId = normalizeString(
+      getFieldValue(row, ["activityId", "activity_id", "activity id", "id"])
+    );
+    const activityName = normalizeString(
+      getFieldValue(row, ["activityName", "activity_name", "activity name", "name", "taskName", "task_name"])
+    );
 
     // Validate required fields: activityId and activityName
     if (!activityId || !activityName) {
@@ -92,12 +117,12 @@ export function parseScheduleFile(buffer, originalFilename) {
     validRows.push({
       activityId,
       activityName,
-      discipline: normalizeString(row.discipline),
-      location: normalizeString(row.location),
-      plannedStart: parseDate(row.plannedStart),
-      plannedEnd: parseDate(row.plannedEnd),
-      actualStart: parseDate(row.actualStart),
-      actualEnd: parseDate(row.actualEnd),
+      discipline: normalizeString(getFieldValue(row, ["discipline", "trade", "department"])),
+      location: normalizeString(getFieldValue(row, ["location", "area", "zone", "site"])),
+      plannedStart: parseDate(getFieldValue(row, ["plannedStart", "planned_start", "planned start", "startDate", "start_date"])),
+      plannedEnd: parseDate(getFieldValue(row, ["plannedEnd", "planned_end", "planned end", "endDate", "end_date"])),
+      actualStart: parseDate(getFieldValue(row, ["actualStart", "actual_start", "actual start"])),
+      actualEnd: parseDate(getFieldValue(row, ["actualEnd", "actual_end", "actual end"])),
     });
   }
 

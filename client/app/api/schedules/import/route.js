@@ -3,21 +3,55 @@ import connectDB from "@/lib/mongodb";
 import ScheduleActivity from "@/models/ScheduleActivity";
 import { parseScheduleFile } from "@/services/scheduleParser";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+
 export async function POST(request) {
+  let formData;
   try {
-    const formData = await request.formData();
-    const file = formData.get("schedule");
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Invalid multipart/form-data request"
+      },
+      { status: 400 }
+    );
+  }
 
-    if (!file || typeof file === "string" || !file.name) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "No schedule file uploaded under the field name 'schedule'"
-        },
-        { status: 400 }
-      );
-    }
+  const file = formData.get("schedule");
 
+  if (!file || typeof file === "string" || !file.name) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "No schedule file uploaded under the field name 'schedule'"
+      },
+      { status: 400 }
+    );
+  }
+
+  if (file.size === 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "The uploaded file is empty (0 bytes)"
+      },
+      { status: 400 }
+    );
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: `File size exceeds the 10MB limit (uploaded: ${(file.size / (1024 * 1024)).toFixed(2)}MB)`
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -103,12 +137,16 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (error) {
+    const status =
+      error.name === "ValidationError" || error.name === "CastError"
+        ? 400
+        : 500;
     return NextResponse.json(
       {
         success: false,
         message: error.message
       },
-      { status: 500 }
+      { status }
     );
   }
 }

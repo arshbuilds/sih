@@ -19,14 +19,34 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Invalid JSON in request body" },
+      { status: 400 }
+    );
+  }
+
+  if (!body || typeof body !== "object") {
+    return NextResponse.json(
+      { success: false, message: "Request body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
   try {
     await connectDB();
-    const body = await request.json();
     const activity = await ScheduleActivity.create(body);
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {
     const status =
-      error.name === "ValidationError" || error.code === 11000 ? 400 : 500;
+      error.name === "ValidationError" ||
+      error.name === "CastError" ||
+      error.code === 11000
+        ? 400
+        : 500;
     return NextResponse.json(
       {
         success: false,
