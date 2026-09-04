@@ -1,0 +1,6 @@
+activityId,activityName,discipline,location,plannedStart,plannedEnd
+CIV-101,Excavate Foundation A,Civil,Site A,2026-09-01,2026-09-05
+CIV-102,Pour Concrete Foundation A,Civil,Site A,2026-09-06,2026-09-10
+PIP-201,Erect Line 24-XX,Piping,Unit 2,2026-09-11,2026-09-15
+ELC-301,Install Cable Tray 1,Electrical,Substation 1,2026-09-16,2026-09-20
+INS-401,Calibrate Pressure Transmitters,Instrumentation,,2026-09-21,2026-09-25

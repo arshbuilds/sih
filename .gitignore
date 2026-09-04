@@ -78,4 +78,5 @@ temp/
 # Uploaded/generated files
 # =========================
 uploads/
+server/uploads/
 generate/
