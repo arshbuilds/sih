@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ScheduleActivity from "@/models/ScheduleActivity";
 import { parseScheduleFile } from "@/services/scheduleParser";
+import { generateEmbedding, buildActivityText } from "@/lib/embeddings";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
@@ -115,6 +116,27 @@ export async function POST(request) {
     let inserted = [];
     if (toInsert.length > 0) {
       inserted = await ScheduleActivity.insertMany(toInsert);
+
+      // Generate embeddings for imported activities
+      let embeddingsGenerated = 0;
+      for (const activity of inserted) {
+        try {
+          const text = buildActivityText(activity);
+          const embedding = await generateEmbedding(text);
+          await ScheduleActivity.updateOne(
+            { _id: activity._id },
+            { $set: { embedding } }
+          );
+          embeddingsGenerated++;
+        } catch (embeddingError) {
+          console.warn(
+            `[embeddings] Failed for ${activity.activityId}: ${embeddingError.message}`
+          );
+        }
+      }
+      console.log(
+        `[embeddings] Generated ${embeddingsGenerated}/${inserted.length} embeddings`
+      );
     }
 
     return NextResponse.json(

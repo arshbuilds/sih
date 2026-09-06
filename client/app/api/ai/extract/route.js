@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { extractFieldReport } from "../../../../../ai/extraction/extractor";
+import { extractFieldReportWithGemini } from "@/lib/geminiExtractor";
+import { extractFieldReport as extractWithOpenAI } from "../../../../../ai/extraction/extractor";
 
 export async function POST(request) {
   let body;
@@ -25,7 +26,7 @@ export async function POST(request) {
     );
   }
 
-  const { report, model, apiKey } = body;
+  const { report, provider, model, apiKey } = body;
 
   if (!report || typeof report !== "string" || !report.trim()) {
     return NextResponse.json(
@@ -38,7 +39,16 @@ export async function POST(request) {
   }
 
   try {
-    const extractedData = await extractFieldReport(report, { model, apiKey });
+    let extractedData;
+    const hasGeminiKey = Boolean(apiKey || process.env.GEMINI_API_KEY);
+    const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
+
+    // Prefer Gemini if key is provided or requested
+    if (provider === "gemini" || hasGeminiKey || !hasOpenAIKey) {
+      extractedData = await extractFieldReportWithGemini(report, { model, apiKey });
+    } else {
+      extractedData = await extractWithOpenAI(report, { model, apiKey });
+    }
 
     return NextResponse.json({
       success: true,
@@ -48,7 +58,9 @@ export async function POST(request) {
     console.error("AI extraction error:", error);
 
     const isClientError =
-      error.message && error.message.includes("Report text is required");
+      error.message &&
+      (error.message.includes("Report text is required") ||
+        error.message.includes("is not configured"));
 
     return NextResponse.json(
       {

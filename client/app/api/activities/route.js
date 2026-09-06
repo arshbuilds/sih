@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ScheduleActivity from "@/models/ScheduleActivity";
+import { generateEmbedding, buildActivityText } from "@/lib/embeddings";
 
 export async function GET() {
   try {
@@ -39,6 +40,19 @@ export async function POST(request) {
   try {
     await connectDB();
     const activity = await ScheduleActivity.create(body);
+
+    // Generate embedding (non-blocking: activity is created even if embedding fails)
+    try {
+      const text = buildActivityText(activity);
+      const embedding = await generateEmbedding(text);
+      activity.embedding = embedding;
+      await activity.save();
+    } catch (embeddingError) {
+      console.warn(
+        `[embeddings] Failed to generate embedding for activity ${activity.activityId}: ${embeddingError.message}`
+      );
+    }
+
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {
     const status =

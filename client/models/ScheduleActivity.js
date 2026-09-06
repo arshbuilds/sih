@@ -44,6 +44,11 @@ const scheduleActivitySchema = new mongoose.Schema(
       default: null,
       min: 0,
       max: 100
+    },
+    embedding: {
+      type: [Number],
+      default: null,
+      select: false
     }
   },
   {

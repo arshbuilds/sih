@@ -50,7 +50,7 @@ const extractedEventSchema = new mongoose.Schema(
     },
     matchingStatus: {
       type: String,
-      enum: ["pending", "matched", "review_required", "unmatched"],
+      enum: ["pending", "matched", "review_required", "unmatched", "manually_matched", "rejected"],
       default: "pending",
       index: true
     },
