@@ -38,6 +38,12 @@ const scheduleActivitySchema = new mongoose.Schema(
     actualEnd: {
       type: Date,
       default: null
+    },
+    progress: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100
     }
   },
   {

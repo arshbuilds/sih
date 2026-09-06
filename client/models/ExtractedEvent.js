@@ -62,7 +62,23 @@ const extractedEventSchema = new mongoose.Schema(
     matchConfidence: {
       type: Number,
       default: null
-    }
+    },
+    matchCandidates: [
+      {
+        activityId: {
+          type: mongoose.Schema.Types.Mixed,
+          default: null
+        },
+        activityName: {
+          type: String,
+          default: null
+        },
+        score: {
+          type: Number,
+          default: null
+        }
+      }
+    ]
   },
   {
     timestamps: true
